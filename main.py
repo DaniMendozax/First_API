@@ -1,7 +1,10 @@
 #Python
+import json
 from datetime import date, datetime
+from unittest import result
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, Dict
+
 
 
 #Pydantic
@@ -9,7 +12,8 @@ from pydantic import BaseModel, EmailStr
 from pydantic import Field
 
 #FastApi
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Body
+from fastapi.encoders import jsonable_encoder
 
 app =  FastAPI()
 
@@ -18,12 +22,6 @@ app =  FastAPI()
 class UserBase(BaseModel):
     userId: UUID = Field(...)
     email: EmailStr = Field(...)
-
-class UserLogin(UserBase):
-    password: str = Field(
-        ...,
-        min_length=8
-    )
 
 
 class User(UserBase):
@@ -40,7 +38,13 @@ class User(UserBase):
     )
     birth_date: Optional[date] = Field(default=None)
 
-class UserRegister(User, UserLogin):
+class UserLogin(UserBase):
+    password: str = Field(
+        ...,
+        min_length=8
+    )
+
+class UserRegister(UserLogin, User):
     pass
 
 class Tweet(BaseModel):
@@ -53,7 +57,7 @@ class Tweet(BaseModel):
     created_at: datetime = Field(default=datetime.now())
     update_at: Optional[datetime] = Field(default=None)
     by: User = Field(...)
-
+ 
 #Path Operations
 
 ## Users
@@ -66,14 +70,14 @@ class Tweet(BaseModel):
     summary="Register an user",
     tags=["Users"]
 )
-def signup():
+def signup(user: UserRegister = Body(...)):
     """
     Signup
 
     This path operation register an user in the app
 
     Parameters:
-        -Request body parameter
+        - Request body parameter
             - user: UserRegistrer
 
     Returns a json with the basic user information
@@ -81,8 +85,15 @@ def signup():
         - email: Emailstr
         - first_name: str
         - last_name: str
-        - birth_date: str
+        - birth_date: datetime
     """
+    json_complatible = jsonable_encoder(user)
+    with open("users.json", "r+", encoding="utf-8") as file:
+        results = json.load(file)
+        results.append(json_complatible)
+        file.seek(0)
+        json.dump(results, file)
+        return user
 
 ### Login an user 
 
