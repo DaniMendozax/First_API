@@ -192,8 +192,30 @@ def home():
     summary="Post a Tweet",
     tags=["Tweets"]
 )
-def past():
-    pass
+def post(tweet: Tweet = Body(...)):
+    """
+    Post a Tweet
+
+    This path operation post a tweet in the app
+
+    Parameters:
+        - Request body parameter
+            - tweet: Tweet
+
+    Returns a json with the basic user information
+        tweet_id: UUID 
+        content: str 
+        created_at: datetime
+        updated_at: Optional[datetime]
+        by: User
+    """
+    json_complatible = jsonable_encoder(tweet)
+    with open("tweets.json", "r+", encoding="utf-8") as file:
+        results = json.load(file)
+        results.append(json_complatible)
+        file.seek(0)
+        json.dump(results, file)
+        return tweet
 
 ### Show a tweet
 @app.get(
